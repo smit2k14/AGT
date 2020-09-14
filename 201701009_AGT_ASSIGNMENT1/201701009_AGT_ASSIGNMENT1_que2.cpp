@@ -5,13 +5,20 @@ void inc2adj(int **inc, int **adj, int n, int m)
 {
     // Converts a given incidence matrix to adjacency matrix.
     // Uses the fact that sum of column in an incidence matrix is 2.
+
     int i, j;
+
+    // Here both the inner and outer loop can be parallelizable but again due to the temp_vertex variable, there needs to be a
+    // critical section. Hence, we parallelize the outer loop to avoid these issues. We use static scheduling here because all
+    // the loops will have similar load so to increase efficiency, we use static scheduling.
+
+    //#pragma omp parallel for private(j, dist) schedule(static)
     for (i = 1; i <= m; i++)
     {
         int temp_vertex = -1;
         for (j = 1; j <= n; j++)
         {
-            if (inc[j][i] == 1)
+            if (inc[j][i] != 0)
             {
                 if (temp_vertex == -1)
                 {
@@ -19,8 +26,8 @@ void inc2adj(int **inc, int **adj, int n, int m)
                 }
                 else
                 {
-                    adj[temp_vertex][j] = 1;
-                    adj[j][temp_vertex] = 1;
+                    adj[temp_vertex][j] += 1;
+                    adj[j][temp_vertex] += 1;
                     break;
                 }
             }
